@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-let folderPath ="";
+let folderPath = "";
 
 if (vscode.workspace.workspaceFolders) {
 	folderPath = vscode.workspace.workspaceFolders[0].uri
@@ -12,11 +12,9 @@ if (vscode.workspace.workspaceFolders) {
 	console.log(folderPath);
 }
 
-
-
 const data = "hello world";
 
-fs.writeFile(path.join( < string > folderPath, "output.txt"), data, err => {
+fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 	if (err) {
 		return vscode.window.showErrorMessage(
 			"Failed to create boilerplate file!"
@@ -49,8 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
-
-
 	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', () => {
 		if (options.get('enable') === false) {
 			console.log('Command has been disabled, not running');
@@ -66,16 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
 			runClipboardMode();
 		}
 	}));
-
-
-	// runCapture();
-
-
 }
-
-
-
-
 
 export function deactivate() {
 	console.log(terminalData);
@@ -86,19 +73,31 @@ function runClipboardMode() {
 	vscode.commands.executeCommand('workbench.action.terminal.selectAll').then(() => {
 		vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
 			vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
-				
 				let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
-				vscode.commands.executeCommand('vscode.open', url).then(()=>{
-					vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-					vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				});
+
+				vscode.commands.executeCommand('vscode.open', url).then(async () => {
+
+					await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+					await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+
+					// 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
+					// 		let text = document.getText();
+
+					// 		console.log(text);
+					// 	});
 
 				
 
 
+				});
 			});
 		});
+		fs.unlink(folderPath + "/output.txt", function (err) {
+			console.log('File deleted!');
+		});
 	});
+
+
 }
 
 function registerTerminalForCapture(terminal: vscode.Terminal) {
@@ -114,9 +113,7 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 				//   - might have some odd output
 				( < any > terminalData)[terminalId] += data;
 			});
-
 		}
-
 	});
 }
 

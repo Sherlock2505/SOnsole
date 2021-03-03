@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
@@ -13,7 +22,7 @@ if (vscode.workspace.workspaceFolders) {
     console.log(folderPath);
 }
 const data = "hello world";
-fs.writeFile(path.join(folderPath, "output.txt"), data, err => {
+fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
     if (err) {
         return vscode.window.showErrorMessage("Failed to create boilerplate file!");
     }
@@ -50,7 +59,6 @@ function activate(context) {
             runClipboardMode();
         }
     }));
-    // runCapture();
 }
 exports.activate = activate;
 function deactivate() {
@@ -63,11 +71,18 @@ function runClipboardMode() {
         vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
             vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
                 let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
-                vscode.commands.executeCommand('vscode.open', url).then(() => {
-                    vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-                    vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                });
+                vscode.commands.executeCommand('vscode.open', url).then(() => __awaiter(this, void 0, void 0, function* () {
+                    yield vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+                    yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+                    // 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
+                    // 		let text = document.getText();
+                    // 		console.log(text);
+                    // 	});
+                }));
             });
+        });
+        fs.unlink(folderPath + "/output.txt", function (err) {
+            console.log('File deleted!');
         });
     });
 }
