@@ -5,15 +5,13 @@ const vscode = require("vscode");
 // const fs = require("fs");
 const fs = require("fs");
 const path = require("path");
-let folderPath;
+let folderPath = "";
 if (vscode.workspace.workspaceFolders) {
     folderPath = vscode.workspace.workspaceFolders[0].uri
         .toString()
         .split(":")[1];
     console.log(folderPath);
 }
-let url = vscode.Uri.parse('file:' + folderPath + "/lexer/Makefile");
-vscode.commands.executeCommand('vscode.open', url);
 const data = "hello world";
 fs.writeFile(path.join(folderPath, "output.txt"), data, err => {
     if (err) {
@@ -55,9 +53,6 @@ function activate(context) {
     // runCapture();
 }
 exports.activate = activate;
-function runCapture() {
-    vscode.commands.executeCommand('extension.sonsole.runCapture');
-}
 function deactivate() {
     console.log(terminalData);
     terminalData = {};
@@ -67,19 +62,11 @@ function runClipboardMode() {
     vscode.commands.executeCommand('workbench.action.terminal.selectAll').then(() => {
         vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
             vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
-                vscode.commands.executeCommand('workbench.action.files.newUntitledFile').then(() => {
+                let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
+                vscode.commands.executeCommand('vscode.open', url).then(() => {
+                    vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+                    vscode.commands.executeCommand('workbench.action.closeActiveEditor');
                 });
-                vscode.workspace.openTextDocument('/home/kirtikjangale/Desktop/Project/sonsole/output.txt').then((document) => {
-                    document.save();
-                    //vscode.commands.executeCommand('workbench.action.files.close');
-                });
-                // vscode.commands.executeCommand('workbench.action.files.newUntitledFile').then(() => {
-                // 	vscode.commands.executeCommand('editor.action.clipboardPasteAction').then(()=>{
-                //	writeFileSync('/home/kirtikjangale/Desktop/Project/sonsole/output.txt','fsdfs');
-                // 	});
-                //   });
-                // const file = readFileSync('foo.txt','utf8');
-                // console.log(file);
             });
         });
     });

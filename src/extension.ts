@@ -3,25 +3,24 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-let folderPath;
+let folderPath ="";
 
-if(vscode.workspace.workspaceFolders){
+if (vscode.workspace.workspaceFolders) {
 	folderPath = vscode.workspace.workspaceFolders[0].uri
-  	.toString()
-  	.split(":")[1];
+		.toString()
+		.split(":")[1];
 	console.log(folderPath);
 }
 
-let url = vscode.Uri.parse('file:' + folderPath+ "/lexer/Makefile");
-vscode.commands.executeCommand('vscode.open', url);
+
 
 const data = "hello world";
 
-fs.writeFile(path.join(<string>folderPath, "output.txt"), data, err => {
+fs.writeFile(path.join( < string > folderPath, "output.txt"), data, err => {
 	if (err) {
-	  return vscode.window.showErrorMessage(
-		"Failed to create boilerplate file!"
-	  );
+		return vscode.window.showErrorMessage(
+			"Failed to create boilerplate file!"
+		);
 	}
 	vscode.window.showInformationMessage("Created boilerplate files");
 });
@@ -76,9 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-function runCapture() {
-	vscode.commands.executeCommand('extension.sonsole.runCapture');
-}
+
 
 export function deactivate() {
 	console.log(terminalData);
@@ -89,28 +86,14 @@ function runClipboardMode() {
 	vscode.commands.executeCommand('workbench.action.terminal.selectAll').then(() => {
 		vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
 			vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
-				vscode.commands.executeCommand('workbench.action.files.newUntitledFile').then(() => {
-					
-				  });
-
-				vscode.workspace.openTextDocument('/home/kirtikjangale/Desktop/Project/sonsole/output.txt').then((document) => {
-					
-					
-					document.save();
-					
-					
-					//vscode.commands.executeCommand('workbench.action.files.close');
+				
+				let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
+				vscode.commands.executeCommand('vscode.open', url).then(()=>{
+					vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+					vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 				});
 
-				// vscode.commands.executeCommand('workbench.action.files.newUntitledFile').then(() => {
-				// 	vscode.commands.executeCommand('editor.action.clipboardPasteAction').then(()=>{
-
-				//	writeFileSync('/home/kirtikjangale/Desktop/Project/sonsole/output.txt','fsdfs');
-					
-				// 	});
-				//   });
-				// const file = readFileSync('foo.txt','utf8');
-				// console.log(file);
+				
 
 
 			});
@@ -131,7 +114,7 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 				//   - might have some odd output
 				( < any > terminalData)[terminalId] += data;
 			});
-			
+
 		}
 
 	});
