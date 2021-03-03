@@ -1,10 +1,32 @@
 import * as vscode from 'vscode';
-import {
-	writeFile,
-	writeFileSync,
-	readFileSync
-} from 'fs';
+// const fs = require("fs");
+import * as fs from 'fs';
+import * as path from 'path';
+
+let folderPath;
+
+if(vscode.workspace.workspaceFolders){
+	folderPath = vscode.workspace.workspaceFolders[0].uri
+  	.toString()
+  	.split(":")[1];
+	console.log(folderPath);
+}
+
+let url = vscode.Uri.parse('file:' + folderPath+ "/lexer/Makefile");
+vscode.commands.executeCommand('vscode.open', url);
+
+const data = "hello world";
+
+fs.writeFile(path.join(<string>folderPath, "output.txt"), data, err => {
+	if (err) {
+	  return vscode.window.showErrorMessage(
+		"Failed to create boilerplate file!"
+	  );
+	}
+	vscode.window.showInformationMessage("Created boilerplate files");
+});
 // Common data to be used elsewhere
+
 let terminalData = {};
 
 export function activate(context: vscode.ExtensionContext) {
@@ -47,7 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 
-	runCapture();
+	// runCapture();
 
 
 }

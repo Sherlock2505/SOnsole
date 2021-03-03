@@ -2,6 +2,25 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
+// const fs = require("fs");
+const fs = require("fs");
+const path = require("path");
+let folderPath;
+if (vscode.workspace.workspaceFolders) {
+    folderPath = vscode.workspace.workspaceFolders[0].uri
+        .toString()
+        .split(":")[1];
+    console.log(folderPath);
+}
+let url = vscode.Uri.parse('file:' + folderPath + "/lexer/Makefile");
+vscode.commands.executeCommand('vscode.open', url);
+const data = "hello world";
+fs.writeFile(path.join(folderPath, "output.txt"), data, err => {
+    if (err) {
+        return vscode.window.showErrorMessage("Failed to create boilerplate file!");
+    }
+    vscode.window.showInformationMessage("Created boilerplate files");
+});
 // Common data to be used elsewhere
 let terminalData = {};
 function activate(context) {
@@ -33,7 +52,7 @@ function activate(context) {
             runClipboardMode();
         }
     }));
-    runCapture();
+    // runCapture();
 }
 exports.activate = activate;
 function runCapture() {
