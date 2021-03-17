@@ -46,7 +46,7 @@ function activate(context) {
             registerTerminalForCapture(t);
         });
     }
-    context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', () => __awaiter(this, void 0, void 0, function* () {
         if (options.get('enable') === false) {
             console.log('Command has been disabled, not running');
         }
@@ -55,10 +55,9 @@ function activate(context) {
             vscode.window.showWarningMessage('No terminals found, cannot run copy');
             return;
         }
-        if (options.get('useClipboard') === true) {
-            runClipboardMode();
-        }
-    }));
+        yield runClipboardMode();
+        yield cleancache();
+    })));
 }
 exports.activate = activate;
 function deactivate() {
@@ -67,23 +66,62 @@ function deactivate() {
 }
 exports.deactivate = deactivate;
 function runClipboardMode() {
-    vscode.commands.executeCommand('workbench.action.terminal.selectAll').then(() => {
-        vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
-            vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
-                let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
-                vscode.commands.executeCommand('vscode.open', url).then(() => __awaiter(this, void 0, void 0, function* () {
-                    yield vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-                    yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                    // 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
-                    // 		let text = document.getText();
-                    // 		console.log(text);
-                    // 	});
-                }));
+    return __awaiter(this, void 0, void 0, function* () {
+        yield vscode.commands.executeCommand('workbench.action.terminal.selectAll');
+        yield vscode.commands.executeCommand('workbench.action.terminal.copySelection');
+        yield vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
+        let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
+        yield vscode.commands.executeCommand('vscode.open', url);
+        yield vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+        yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        yield vscode.commands.executeCommand('workbench.action.terminal.clear');
+        const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, { enableScripts: true });
+        panel.webview.html = getWebviewContent();
+    });
+}
+function getWebviewContent() {
+    return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <title>Cat Coding</title>
+  </head>	
+  <body>
+	  <h1>Results from stack overflow will be shown here</h1>
+	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+	  <h1 id="lines-of-code-counter">0</h1>
+	  <script>
+        const counter = document.getElementById('lines-of-code-counter');
+
+        let count = 0;
+        setInterval(() => {
+            counter.textContent = count++;
+        }, 100);
+    </script>
+  </body>
+  
+  </html>`;
+}
+function cleancache() {
+    fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
+        if (err) {
+            return vscode.window.showErrorMessage("Failed to create boilerplate file!");
+        }
+        vscode.window.showInformationMessage("Created boilerplate files");
+    });
+    vscode.commands.executeCommand('workbench.action.files.saveAll');
+}
+function deleteFile(filePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            fs.unlink(filePath, () => {
+                console.log(`Deleted ${filePath}`);
             });
-        });
-        fs.unlink(folderPath + "/output.txt", function (err) {
-            console.log('File deleted!');
-        });
+        }
+        catch (error) {
+            console.error(`Got an error trying to delete the file: ${error.message}`);
+        }
     });
 }
 function registerTerminalForCapture(terminal) {

@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	console.log('sonsole extension is now active');
-
+	
 	if (options.get('useClipboard') === false) {
 		vscode.window.terminals.forEach(t => {
 			registerTerminalForCapture(t);
@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
-	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture',async () => {
 		if (options.get('enable') === false) {
 			console.log('Command has been disabled, not running');
 		}
@@ -58,9 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		if (options.get('useClipboard') === true) {
-			runClipboardMode();
-		}
+		
+		await runClipboardMode();
+		await cleancache();
+
 	}));
 }
 
@@ -69,35 +70,73 @@ export function deactivate() {
 	terminalData = {};
 }
 
-function runClipboardMode() {
-	vscode.commands.executeCommand('workbench.action.terminal.selectAll').then(() => {
-		vscode.commands.executeCommand('workbench.action.terminal.copySelection').then(() => {
-			vscode.commands.executeCommand('workbench.action.terminal.clearSelection').then(() => {
-				let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
+async function runClipboardMode() {
+	
+	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
 
-				vscode.commands.executeCommand('vscode.open', url).then(async () => {
+	await vscode.commands.executeCommand('workbench.action.terminal.copySelection');
+	await vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
+	let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
 
-					await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-					await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+	await vscode.commands.executeCommand('vscode.open', url);
 
-					// 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
-					// 		let text = document.getText();
+	await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
 
-					// 		console.log(text);
-					// 	});
+	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
-				
+	const panel = vscode.window.createWebviewPanel('sonsoleView','Answers',vscode.ViewColumn.Two,{enableScripts: true});
+	panel.webview.html = getWebviewContent();
+	
+}
 
+function getWebviewContent() {
+	return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <title>Cat Coding</title>
+  </head>	
+  <body>
+	  <h1>Results from stack overflow will be shown here</h1>
+	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+	  <h1 id="lines-of-code-counter">0</h1>
+	  <script>
+        const counter = document.getElementById('lines-of-code-counter');
 
-				});
-			});
-		});
-		fs.unlink(folderPath + "/output.txt", function (err) {
-			console.log('File deleted!');
-		});
+        let count = 0;
+        setInterval(() => {
+            counter.textContent = count++;
+        }, 100);
+    </script>
+  </body>
+  
+  </html>`;
+  }
+
+function cleancache(){
+	fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
+		if (err) {
+			return vscode.window.showErrorMessage(
+				"Failed to create boilerplate file!"
+			);
+		}
+		vscode.window.showInformationMessage("Created boilerplate files");
 	});
+	vscode.commands.executeCommand('workbench.action.files.saveAll');
 
+}
 
+async function deleteFile(filePath: fs.PathLike) {
+	try {
+		fs.unlink(filePath, () => {
+			console.log(`Deleted ${filePath}`);
+		});
+
+	} catch (error) {
+		console.error(`Got an error trying to delete the file: ${error.message}`);
+	}
 }
 
 function registerTerminalForCapture(terminal: vscode.Terminal) {
