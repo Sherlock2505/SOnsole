@@ -14,6 +14,7 @@ const vscode = require("vscode");
 // const fs = require("fs");
 const fs = require("fs");
 const path = require("path");
+const axios_1 = require("axios");
 let folderPath = "";
 if (vscode.workspace.workspaceFolders) {
     folderPath = vscode.workspace.workspaceFolders[0].uri
@@ -76,49 +77,77 @@ function runClipboardMode() {
         yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         yield vscode.commands.executeCommand('workbench.action.terminal.clear');
         let text = "";
-        vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
+        vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => __awaiter(this, void 0, void 0, function* () {
             text = document.getText();
             //console.log(text);
             let errList;
             console.log(text);
-            if (text !== undefined) {
-                errList = text.split('\n');
-                errList = errList.filter((err) => { return err.length > 0; });
-                errList.shift();
-                errList.pop();
-                errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
-            }
+            errList = text.split('\n');
+            errList = errList.filter((err) => { return err.length > 0; });
+            errList.shift();
+            errList.pop();
+            errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
             console.log(errList);
-        });
-        const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
-            enableScripts: true
-        });
-        panel.webview.html = getWebviewContent();
+            const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
+                enableScripts: true
+            });
+            panel.webview.html = yield getWebviewContent(errList);
+        }));
     });
 }
-function getWebviewContent() {
-    return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>Cat Coding</title>
-  </head>	
-  <body>
-	  <h1>Results from stack overflow will be shown here</h1>
-	  <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
-	  <h1 id="lines-of-code-counter">0</h1>
-	  <script>
-        const counter = document.getElementById('lines-of-code-counter');
+function getWebviewContent(errList) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let htmlResponse = `<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Cat Coding</title>
+	</head>	
+	<body>
+		<h1>Results from stack overflow will be shown here</h1>
+		<img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+		<h1 id="lines-of-code-counter">0</h1>
+		<script>
+			const counter = document.getElementById('lines-of-code-counter');
 
-        let count = 0;
-        setInterval(() => {
-            counter.textContent = count++;
-        }, 100);
-    </script>
-  </body>
-  
-  </html>`;
+			let count = 0;
+			setInterval(() => {
+				counter.textContent = count++;
+			}, 100);
+		</script>
+	</body>
+	
+	</html>`;
+        let data = yield axios_1.default.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
+        `<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+		<title>Cat Coding</title>
+	</head>	
+	<body>
+		<h1>Results from stack overflow will be shown here</h1>
+		<img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+		<h1 id="lines-of-code-counter">0</h1>
+		<script>
+			const counter = document.getElementById('lines-of-code-counter');
+
+			let count = 0;
+			setInterval(() => {
+				counter.textContent = count++;
+			}, 100);
+		</script>
+	</body>
+	
+	</html>`;
+        console.log(data);
+        return htmlResponse;
+    });
 }
 function cleancache() {
     fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
