@@ -157,22 +157,23 @@ async function getWebviewContent(errList:string[]) {
 		<title>Cat Coding</title>
 	</head>	
 	<body>
-		<h1>Results from stack overflow will be shown here</h1>`
+		<h1>Results from stack overflow will be shown here</h1>`;
 	var list = `<ul class="list-group">`;
 	for(let i = 0; i < data.items.length; i+=1){
-		var list_item = `<li class="list-group-item">
+		var listItem = `<li class="list-group-item">
 		<p><a href=${data.items[i].link}>${data.items[i].title}</a></p>
 		<p><ul>
-		`
+		`;
 		for(let j =0; j< data.items[i].tags.length; j++){
-			list_item += `<li>${data.items[i].tags[j]}</li>`
+			listItem += `<li>${data.items[i].tags[j]}</li>`;
 		}
-		list_item += "</ul></p>"
-		list += list_item
+		listItem += "</ul></p>";
+		list += listItem;
 	}
 	list += `<ul>`;
 	var post = `</body></html>`;
 	var doc = pre + list + post;
+	console.log(data);
 	return doc;
 }
 
