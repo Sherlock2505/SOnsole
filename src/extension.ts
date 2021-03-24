@@ -143,36 +143,37 @@ async function getWebviewContent(errList:string[]) {
 	</html>`;
 
 
-	let data = await axios.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
-	
-	`<!DOCTYPE html>
+	let response: any;
+	response = await axios.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
+	let data = response.data;
+	var pre = `<!DOCTYPE html>
 	<html lang="en">
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
+		
 		<title>Cat Coding</title>
 	</head>	
 	<body>
-		<h1>Results from stack overflow will be shown here</h1>
-		<img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
-		<h1 id="lines-of-code-counter">0</h1>
-		<script>
-			const counter = document.getElementById('lines-of-code-counter');
-
-			let count = 0;
-			setInterval(() => {
-				counter.textContent = count++;
-			}, 100);
-		</script>
-	</body>
-	
-	</html>`;
-
-	console.log(data);
-	return htmlResponse;
+		<h1>Results from stack overflow will be shown here</h1>`
+	var list = `<ul class="list-group">`;
+	for(let i = 0; i < data.items.length; i+=1){
+		var list_item = `<li class="list-group-item">
+		<p><a href=${data.items[i].link}>${data.items[i].title}</a></p>
+		<p><ul>
+		`
+		for(let j =0; j< data.items[i].tags.length; j++){
+			list_item += `<li>${data.items[i].tags[j]}</li>`
+		}
+		list_item += "</ul></p>"
+		list += list_item
+	}
+	list += `<ul>`;
+	var post = `</body></html>`;
+	var doc = pre + list + post;
+	return doc;
 }
 
 function cleancache() {
