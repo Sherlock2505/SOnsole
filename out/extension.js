@@ -75,7 +75,13 @@ function runClipboardMode() {
         yield vscode.commands.executeCommand('editor.action.clipboardPasteAction');
         yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         yield vscode.commands.executeCommand('workbench.action.terminal.clear');
-        const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, { enableScripts: true });
+        vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
+            let text = document.getText();
+            console.log(text);
+        });
+        const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
+            enableScripts: true
+        });
         panel.webview.html = getWebviewContent();
     });
 }

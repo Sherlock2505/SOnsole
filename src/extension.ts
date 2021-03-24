@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	console.log('sonsole extension is now active');
-	
+
 	if (options.get('useClipboard') === false) {
 		vscode.window.terminals.forEach(t => {
 			registerTerminalForCapture(t);
@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
-	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture',async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', async () => {
 		if (options.get('enable') === false) {
 			console.log('Command has been disabled, not running');
 		}
@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		
+
 		await runClipboardMode();
 		await cleancache();
 
@@ -71,7 +71,7 @@ export function deactivate() {
 }
 
 async function runClipboardMode() {
-	
+
 	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
 
 	await vscode.commands.executeCommand('workbench.action.terminal.copySelection');
@@ -85,9 +85,16 @@ async function runClipboardMode() {
 	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
-	const panel = vscode.window.createWebviewPanel('sonsoleView','Answers',vscode.ViewColumn.Two,{enableScripts: true});
+	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
+		let text = document.getText();
+		console.log(text);
+	});
+
+	const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
+		enableScripts: true
+	});
 	panel.webview.html = getWebviewContent();
-	
+
 }
 
 function getWebviewContent() {
@@ -113,9 +120,9 @@ function getWebviewContent() {
   </body>
   
   </html>`;
-  }
+}
 
-function cleancache(){
+function cleancache() {
 	fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 		if (err) {
 			return vscode.window.showErrorMessage(
