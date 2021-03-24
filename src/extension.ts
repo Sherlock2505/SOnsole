@@ -85,10 +85,29 @@ async function runClipboardMode() {
 	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
+	let text="";
 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => {
-		let text = document.getText();
+		text = document.getText();
+		//console.log(text);
+		let errList;
 		console.log(text);
+		if(text!==undefined){
+			errList = text.split('\n');
+			errList = errList.filter((err) => { return err.length > 0; });
+			errList.shift();
+			errList.pop();
+			
+			errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
+			
+		}
+	
+		console.log(errList);
+		
 	});
+
+	
+	
+
 
 	const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
 		enableScripts: true
@@ -174,4 +193,4 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 // 						vscode.workspace.openTextDocument('/home/kirtikjangale/Desktop/Project/sonsole/output.txt').then((document) => {
 // 							let text = document.getText();
 // 							console.log(text);
-// 						  });
+// 						});
