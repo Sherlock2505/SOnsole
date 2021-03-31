@@ -3,8 +3,12 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+var DomParser = require('dom-parser');
 
 let folderPath = "";
+
+const query_url="https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
+
 
 if (vscode.workspace.workspaceFolders) {
 	folderPath = vscode.workspace.workspaceFolders[0].uri
@@ -145,7 +149,37 @@ async function getWebviewContent(errList:string[]) {
 
 	let response: any;
 	response = await axios.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
-	let data = response.data;
+	let items = response.data.items;
+
+
+
+
+
+
+	items = items.filter((item:any) => {
+		console.log(item.is_answered);
+		return item.is_answered===true;});
+
+	let tags = [];
+	for(let i=0;i<items.length;i+=1){
+		let str="";
+		response = await axios.get(items[i].link);
+		
+		var htmlObject = stringToHTML(response.data);
+		console.log(htmlObject);
+		let tp = htmlObject.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p");
+		
+		for(let j=0;j<tp.length;j+=1){
+			str+=tp[j].innerText;
+			str+=" ";
+		}
+		$.get(query_url+encodeURIComponent(str).substr(0,4000) , function(data: any){
+			console.log(data);
+		});
+		
+	}
+
+
 	var pre = `<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -159,13 +193,13 @@ async function getWebviewContent(errList:string[]) {
 	<body>
 		<h1>Results from stack overflow will be shown here</h1>`;
 	var list = `<ul class="list-group">`;
-	for(let i = 0; i < data.items.length; i+=1){
+	for(let i = 0; i < items.length; i+=1){
 		var listItem = `<li class="list-group-item">
-		<p><a href=${data.items[i].link}>${data.items[i].title}</a></p>
+		<p><a href=${items[i].link}>${items[i].title}</a></p>
 		<p><ul>
 		`;
-		for(let j =0; j< data.items[i].tags.length; j++){
-			listItem += `<li>${data.items[i].tags[j]}</li>`;
+		for(let j =0; j< items[i].tags.length; j++){
+			listItem += `<li>${items[i].tags[j]}</li>`;
 		}
 		listItem += "</ul></p>";
 		list += listItem;
@@ -173,7 +207,7 @@ async function getWebviewContent(errList:string[]) {
 	list += `<ul>`;
 	var post = `</body></html>`;
 	var doc = pre + list + post;
-	console.log(data);
+	console.log(items);
 	return doc;
 }
 
@@ -200,6 +234,13 @@ async function deleteFile(filePath: fs.PathLike) {
 		console.error(`Got an error trying to delete the file: ${error.message}`);
 	}
 }
+
+var stringToHTML = function (str: any) {
+	var parser = new DomParser();
+	var doc = parser.parseFromString(str, 'text/html');
+	console.log(doc);
+	return doc.rawHTML;
+};
 
 function registerTerminalForCapture(terminal: vscode.Terminal) {
 	terminal.processId.then(terminalId => {
