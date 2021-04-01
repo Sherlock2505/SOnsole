@@ -115,10 +115,19 @@ async function runClipboardMode() {
 		panel.webview.html = await getWebviewContent(errList);
 		
 	});
+}
 
+function argsort(test: any) {
+	let result = [];
+	for(let i = 0; i != test.length; ++i) result[i] = i;
+	result = result.sort(function(u,v) { return test[u] - test[v]; })
+	return result;
+}
 
-	
-
+function process(proba: any) {
+	const proba_vals = proba;
+	const order = argsort(proba);
+	// display(proba_vals, order);
 }
 
 async function getWebviewContent(errList:string[]) {
