@@ -7,6 +7,7 @@ var DomParser = require('dom-parser');
 
 let folderPath = "";
 var parser = new DomParser();
+const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 
 const query_url="https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
 
@@ -33,6 +34,10 @@ fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 let terminalData = {};
 
 export function activate(context: vscode.ExtensionContext) {
+
+	
+	
+
 	let options = vscode.workspace.getConfiguration('terminalCapture');
 	terminalData = {};
 
@@ -65,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 
-		await runClipboardMode();
+		await runClipboardMode(context);
 		await cleancache();
 
 	}));
@@ -76,7 +81,7 @@ export function deactivate() {
 	terminalData = {};
 }
 
-async function runClipboardMode() {
+async function runClipboardMode(context:vscode.ExtensionContext) {
 
 	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
 
@@ -112,16 +117,24 @@ async function runClipboardMode() {
 		const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
 			enableScripts: true
 		});
-		panel.webview.html = await getWebviewContent(errList);
+
+		// Get path to resource on disk
+		const onDiskPath = vscode.Uri.file( 
+			path.join(context.extensionPath, 'src', 'styles.css')
+		);
+		// And get the special URI to use with the webview
+		const cssURI = panel.webview.asWebviewUri(onDiskPath);
+
+		panel.webview.html = await getWebviewContent(errList,cssURI);
 		
 	});
 }
 
 function argsort(test: any) {
 	let result = [];
-	for(let i = 0; i != test.length; ++i) result[i] = i;
-	result = result.sort(function(u,v) { return test[u] - test[v]; })
-	return result;
+	for(let i = 0; i !== test.length; ++i) result[i] = i;
+	result = result.sort(function(u,v) { return test[u] - test[v]; });
+	return result.reverse();
 }
 
 function process(proba: any) {
@@ -130,7 +143,7 @@ function process(proba: any) {
 	// display(proba_vals, order);
 }
 
-async function getWebviewContent(errList:string[]) {
+async function getWebviewContent(errList:string[],uri:any) {
 
 
 	let htmlResponse = `<!DOCTYPE html>
@@ -164,6 +177,7 @@ async function getWebviewContent(errList:string[]) {
 	return item.is_answered===true;});
 
 	let tags = [];
+	let proba = [];
 	for(let i=0;i<items.length;i+=1){
 		let str="";
 		response = await axios.get(items[i].link);
@@ -181,6 +195,10 @@ async function getWebviewContent(errList:string[]) {
 		console.log(str);
 		let tag = await axios.get(query_url+encodeURIComponent(str).substr(0,4000));
 		console.log(tag);
+
+		let sortedTag = argsort(tag.data);
+		tags.push(sortedTag);
+		proba.push(tag.data);
 	}
 
 
@@ -191,7 +209,7 @@ async function getWebviewContent(errList:string[]) {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		
+		<link rel='stylesheet' href='`+ uri + `' />
 		<title>Cat Coding</title>
 	</head>	
 	<body>
@@ -205,6 +223,25 @@ async function getWebviewContent(errList:string[]) {
 		for(let j =0; j< items[i].tags.length; j++){
 			listItem += `<li>${items[i].tags[j]}</li>`;
 		}
+		listItem+=`<table>
+			
+		<tr>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1">${tagName[tags[i][0]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2">${tagName[tags[i][1]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5">${tagName[tags[i][2]]}</a></p></td>
+		</tr>
+		<tr>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][0]]*100}%"></div></div>
+			</td>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][1]]*100}%"></div></div>
+			</td>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][2]]*100}%"></div></div>
+			</td>
+		</tr>
+		</table>`;
 		listItem += "</ul></p>";
 		list += listItem;
 	}

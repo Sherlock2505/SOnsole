@@ -17,6 +17,8 @@ const path = require("path");
 const axios_1 = require("axios");
 var DomParser = require('dom-parser');
 let folderPath = "";
+var parser = new DomParser();
+const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 const query_url = "https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
 if (vscode.workspace.workspaceFolders) {
     folderPath = vscode.workspace.workspaceFolders[0].uri
@@ -58,7 +60,7 @@ function activate(context) {
             vscode.window.showWarningMessage('No terminals found, cannot run copy');
             return;
         }
-        yield runClipboardMode();
+        yield runClipboardMode(context);
         yield cleancache();
     })));
 }
@@ -68,7 +70,7 @@ function deactivate() {
     terminalData = {};
 }
 exports.deactivate = deactivate;
-function runClipboardMode() {
+function runClipboardMode(context) {
     return __awaiter(this, void 0, void 0, function* () {
         yield vscode.commands.executeCommand('workbench.action.terminal.selectAll');
         yield vscode.commands.executeCommand('workbench.action.terminal.copySelection');
@@ -93,11 +95,27 @@ function runClipboardMode() {
             const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
                 enableScripts: true
             });
-            panel.webview.html = yield getWebviewContent(errList);
+            // Get path to resource on disk
+            const onDiskPath = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
+            // And get the special URI to use with the webview
+            const cssURI = panel.webview.asWebviewUri(onDiskPath);
+            panel.webview.html = yield getWebviewContent(errList, cssURI);
         }));
     });
 }
-function getWebviewContent(errList) {
+function argsort(test) {
+    let result = [];
+    for (let i = 0; i !== test.length; ++i)
+        result[i] = i;
+    result = result.sort(function (u, v) { return test[u] - test[v]; });
+    return result.reverse();
+}
+function process(proba) {
+    const proba_vals = proba;
+    const order = argsort(proba);
+    // display(proba_vals, order);
+}
+function getWebviewContent(errList, uri) {
     return __awaiter(this, void 0, void 0, function* () {
         let htmlResponse = `<!DOCTYPE html>
 	<html lang="en">
@@ -119,7 +137,6 @@ function getWebviewContent(errList) {
 			}, 100);
 		</script>
 	</body>
-	
 	</html>`;
         let response;
         response = yield axios_1.default.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
@@ -129,19 +146,23 @@ function getWebviewContent(errList) {
             return item.is_answered === true;
         });
         let tags = [];
+        let proba = [];
         for (let i = 0; i < items.length; i += 1) {
             let str = "";
             response = yield axios_1.default.get(items[i].link);
-            var htmlObject = stringToHTML(response.data);
-            console.log(htmlObject);
-            let tp = htmlObject.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p");
+            var dom = parser.parseFromString(response.data);
+            //console.log(dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p"));
+            let tp = dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p");
             for (let j = 0; j < tp.length; j += 1) {
-                str += tp[j].innerText;
+                str += tp[j].textContent;
                 str += " ";
             }
-            $.get(query_url + encodeURIComponent(str).substr(0, 4000), function (data) {
-                console.log(data);
-            });
+            console.log(str);
+            let tag = yield axios_1.default.get(query_url + encodeURIComponent(str).substr(0, 4000));
+            console.log(tag);
+            let sortedTag = argsort(tag.data);
+            tags.push(sortedTag);
+            proba.push(tag.data);
         }
         var pre = `<!DOCTYPE html>
 	<html lang="en">
@@ -150,7 +171,7 @@ function getWebviewContent(errList) {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		
+		<link rel='stylesheet' href='` + uri + `' />
 		<title>Cat Coding</title>
 	</head>	
 	<body>
@@ -164,6 +185,25 @@ function getWebviewContent(errList) {
             for (let j = 0; j < items[i].tags.length; j++) {
                 listItem += `<li>${items[i].tags[j]}</li>`;
             }
+            listItem += `<table>
+			
+		<tr>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1">${tagName[tags[i][0]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2">${tagName[tags[i][1]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5">${tagName[tags[i][2]]}</a></p></td>
+		</tr>
+		<tr>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][0]] * 100}%"></div></div>
+			</td>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][1]] * 100}%"></div></div>
+			</td>
+			<td>
+				<div class="progress"><div class="determinate" style="width: ${proba[i][tags[i][2]] * 100}%"></div></div>
+			</td>
+		</tr>
+		</table>`;
             listItem += "</ul></p>";
             list += listItem;
         }
@@ -195,12 +235,6 @@ function deleteFile(filePath) {
         }
     });
 }
-var stringToHTML = function (str) {
-    var parser = new DomParser();
-    var doc = parser.parseFromString(str, 'text/html');
-    console.log(doc);
-    return doc.rawHTML;
-};
 function registerTerminalForCapture(terminal) {
     terminal.processId.then(terminalId => {
         if (terminalId !== undefined) {
