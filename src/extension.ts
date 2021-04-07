@@ -4,22 +4,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 var DomParser = require('dom-parser');
-
-let folderPath = "";
 var parser = new DomParser();
+
+//global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
-
 const query_url="https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
-
+let folderPath = "";
+let terminalData = {};
 
 if (vscode.workspace.workspaceFolders) {
 	folderPath = vscode.workspace.workspaceFolders[0].uri
 		.toString()
 		.split(":")[1];
-	console.log(folderPath);
 }
-
-const data = "hello world";
 
 fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 	if (err) {
@@ -29,14 +26,8 @@ fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 	}
 	vscode.window.showInformationMessage("Created boilerplate files");
 });
-// Common data to be used elsewhere
-
-let terminalData = {};
 
 export function activate(context: vscode.ExtensionContext) {
-
-	
-	
 
 	let options = vscode.workspace.getConfiguration('terminalCapture');
 	terminalData = {};
@@ -72,7 +63,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 		await runClipboardMode(context);
 		await cleancache();
-
 	}));
 }
 
@@ -82,17 +72,12 @@ export function deactivate() {
 }
 
 async function runClipboardMode(context:vscode.ExtensionContext) {
-
 	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
-
 	await vscode.commands.executeCommand('workbench.action.terminal.copySelection');
 	await vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
 	let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
-
 	await vscode.commands.executeCommand('vscode.open', url);
-
 	await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
-
 	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
@@ -100,19 +85,12 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then(async (document) => {
 		text = document.getText();
 		//console.log(text);
-		let errList:string[];
-		console.log(text);
-		
-			errList = text.split('\n');
-			errList = errList.filter((err) => { return err.length > 0; });
-			errList.shift();
-			errList.pop();
-			
-			errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
-			
-		
-	
-		console.log(errList);
+		let errList:string[];		
+		errList = text.split('\n');
+		errList = errList.filter((err) => { return err.length > 0; });
+		errList.shift();
+		errList.pop();
+		errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
 
 		const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
 			enableScripts: true
@@ -124,9 +102,7 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 		);
 		// And get the special URI to use with the webview
 		const cssURI = panel.webview.asWebviewUri(onDiskPath);
-
 		panel.webview.html = await getWebviewContent(errList,cssURI);
-		
 	});
 }
 
@@ -135,12 +111,6 @@ function argsort(test: any) {
 	for(let i = 0; i !== test.length; ++i) result[i] = i;
 	result = result.sort(function(u,v) { return test[u] - test[v]; });
 	return result.reverse();
-}
-
-function process(proba: any) {
-	const proba_vals = proba;
-	const order = argsort(proba);
-	// display(proba_vals, order);
 }
 
 async function getWebviewContent(errList:string[],uri:any) {
@@ -262,20 +232,7 @@ function cleancache() {
 		vscode.window.showInformationMessage("Created boilerplate files");
 	});
 	vscode.commands.executeCommand('workbench.action.files.saveAll');
-
 }
-
-async function deleteFile(filePath: fs.PathLike) {
-	try {
-		fs.unlink(filePath, () => {
-			console.log(`Deleted ${filePath}`);
-		});
-
-	} catch (error) {
-		console.error(`Got an error trying to delete the file: ${error.message}`);
-	}
-}
-
 
 function registerTerminalForCapture(terminal: vscode.Terminal) {
 	terminal.processId.then(terminalId => {
@@ -284,25 +241,8 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 
 			( < any > terminalData)[terminalId] = "";
 			( < any > terminal).onDidWriteData((data: any) => {
-				// TODO:
-				//   - Need to remove (or handle) backspace
-				//   - not sure what to do about carriage return???
-				//   - might have some odd output
 				( < any > terminalData)[terminalId] += data;
 			});
 		}
 	});
 }
-
-// const editor = vscode.window.activeTextEditor;
-
-// 						if(editor!==undefined){
-
-// 							var selection = editor.selection; 
-// 							var text = editor.document.getText(selection);
-// 							console.log(editor.document.getText());
-// 						}
-// 						vscode.workspace.openTextDocument('/home/kirtikjangale/Desktop/Project/sonsole/output.txt').then((document) => {
-// 							let text = document.getText();
-// 							console.log(text);
-// 						});
