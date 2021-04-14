@@ -11,7 +11,18 @@
 	</head>	
 	<body>
 		<h1>Results from stack overflow will be shown here</h1>
-		<button onclick="sort_by_tag('discrepancy')">Sort Elements</button>
+		<ul class="list-group">
+			<table>
+				<tr>
+					<td><button class="post-tag custom-tag0" onclick="sort_by_tag('Conceptual')">Conceptual</button></td>
+					<td><button class="post-tag custom-tag1" onclick="sort_by_tag('MWE')">MWE</button></td>
+					<td><button class="post-tag custom-tag2" onclick="sort_by_tag('Discrepancy')">Discrepancy</button></td>
+					<td><button class="post-tag custom-tag3" onclick="sort_by_tag('Error')">Error</button></td>
+					<td><button class="post-tag custom-tag4" onclick="sort_by_tag('Implementation')">Implementation</button></td>
+					<td><button class="post-tag custom-tag5" onclick="sort_by_tag('Learning')">Learning</button></td>			
+				</tr>
+			</table>
+		</ul>
         <ul class="list-group">
             <li class="list-group-item" value="3">
                 <h1>Title: This is the space for title</h1>
@@ -22,7 +33,7 @@
 					<tr>
 						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1" id="conceptual" value="78">Conceptual</a></p></td>
 						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2" id="MWE" value="32">MWE</a></p></td>
-						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5" id="Discrepancy" value="10">Conceptual</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5" id="Discrepancy" value="10">Discrepancy</a></p></td>
 					</tr>
 					<tr>
 						<td>

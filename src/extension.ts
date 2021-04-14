@@ -97,12 +97,16 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 		});
 
 		// Get path to resource on disk
-		const onDiskPath = vscode.Uri.file( 
+		const onDiskPathCSS = vscode.Uri.file( 
 			path.join(context.extensionPath, 'src', 'styles.css')
 		);
+		const onDiskPathJS = vscode.Uri.file( 
+			path.join(context.extensionPath, 'src', 'index.js')
+		);
 		// And get the special URI to use with the webview
-		const cssURI = panel.webview.asWebviewUri(onDiskPath);
-		panel.webview.html = await getWebviewContent(errList,cssURI);
+		const cssURI = panel.webview.asWebviewUri(onDiskPathCSS);
+		const jsURI = panel.webview.asWebviewUri(onDiskPathJS);
+		panel.webview.html = await getWebviewContent(errList,cssURI, jsURI);
 	});
 }
 
@@ -113,7 +117,7 @@ function argsort(test: any) {
 	return result.reverse();
 }
 
-async function getWebviewContent(errList:string[],uri:any) {
+async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 
 
 	let htmlResponse = `<!DOCTYPE html>
@@ -148,7 +152,7 @@ async function getWebviewContent(errList:string[],uri:any) {
 
 	let tags = [];
 	let proba = [];
-	for(let i=0;i<items.length;i+=1){
+	for(let i=0;i<5;i+=1){
 		let str="";
 		response = await axios.get(items[i].link);
 		
@@ -179,13 +183,26 @@ async function getWebviewContent(errList:string[],uri:any) {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		<link rel='stylesheet' href='`+ uri + `' />
+		<link rel='stylesheet' href='`+ cssuri + `' />
+		<script src='`+ jsuri + `'></script>
 		<title>Cat Coding</title>
 	</head>	
 	<body>
-		<h1>Results from stack overflow will be shown here</h1>`;
+		<h1>Results from stack overflow will be shown here</h1>
+		<ul class="list-group">
+			<table>
+				<tr>
+					<td><button class="post-tag custom-tag0" onclick="sort_by_tag('Conceptual')">Conceptual</button></td>
+					<td><button class="post-tag custom-tag1" onclick="sort_by_tag('MWE')">MWE</button></td>
+					<td><button class="post-tag custom-tag2" onclick="sort_by_tag('Discrepancy')">Discrepancy</button></td>
+					<td><button class="post-tag custom-tag3" onclick="sort_by_tag('Error')">Error</button></td>
+					<td><button class="post-tag custom-tag4" onclick="sort_by_tag('Implementation')">Implementation</button></td>
+					<td><button class="post-tag custom-tag5" onclick="sort_by_tag('Learning')">Learning</button></td>			
+				</tr>
+			</table>
+		</ul>`;
 	var list = `<ul class="list-group">`;
-	for(let i = 0; i < items.length; i+=1){
+	for(let i = 0; i < 5; i+=1){
 		var listItem = `<li class="list-group-item">
 		<p><a href=${items[i].link}>${items[i].title}</a></p>
 		<p><ul>
@@ -196,9 +213,9 @@ async function getWebviewContent(errList:string[],uri:any) {
 		listItem+=`<table>
 			
 		<tr>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1">${tagName[tags[i][0]]}</a></p></td>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2">${tagName[tags[i][1]]}</a></p></td>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5">${tagName[tags[i][2]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1 id="${tagName[tags[i][0]]}" value="${proba[i][tags[i][0]]}"">${tagName[tags[i][0]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2 id="${tagName[tags[i][1]]}" value="${proba[i][tags[i][1]]}"">${tagName[tags[i][1]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5 id="${tagName[tags[i][2]]}" value="${proba[i][tags[i][2]]}"">${tagName[tags[i][2]]}</a></p></td>
 		</tr>
 		<tr>
 			<td>
@@ -215,10 +232,9 @@ async function getWebviewContent(errList:string[],uri:any) {
 		listItem += "</ul></p>";
 		list += listItem;
 	}
-	list += `<ul>`;
+	list += `</ul>`;
 	var post = `</body></html>`;
 	var doc = pre + list + post;
-	console.log(items);
 	return doc;
 }
 
