@@ -7,38 +7,88 @@
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 		<link rel="stylesheet" href="./styles.css">
 		<title>Cat Coding</title>
+		<script src="index.js"></script>
 	</head>	
 	<body>
 		<h1>Results from stack overflow will be shown here</h1>
-		
+		<button onclick="sort_by_tag('discrepancy')">Sort Elements</button>
         <ul class="list-group">
-            <li class="list-group-item">
+            <li class="list-group-item" value="3">
                 <h1>Title: This is the space for title</h1>
-                <p><a href='#'>Click here for question link</a></p>
+                <p><a href='#'>Click here for question link 1</a></p>
                 <p><ul><li>Tag1</li><li>Tag2</li></ul></p>
+				<table>
+				
+					<tr>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1" id="conceptual" value="78">Conceptual</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2" id="MWE" value="32">MWE</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5" id="Discrepancy" value="10">Conceptual</a></p></td>
+					</tr>
+					<tr>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 70%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 10%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 40%"></div></div>
+						</td>
+					</tr>
+				</table>
+            </li>
+			<li class="list-group-item" value="2">
+                <h1>Title: This is the space for title</h1>
+                <p><a href='#'>Click here for question link 2</a></p>
+                <p><ul><li>Tag1</li><li>Tag2</li></ul></p>
+				<table>
+				
+					<tr>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1" id="conceptual" value="50">Conceptual</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2" id="MWE" value="40">MWE</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5" id="discrepancy" value="30">Discrepancy</a></p></td>
+					</tr>
+					<tr>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 70%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 10%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 40%"></div></div>
+						</td>
+					</tr>
+				</table>
+            </li>
+			<li class="list-group-item" value="1">
+                <h1>Title: This is the space for title</h1>
+                <p><a href='#'>Click here for question link 3</a></p>
+                <p><ul><li>Tag1</li><li>Tag2</li></ul></p>
+				<table>
+				
+					<tr>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1" id="conceptual" value="75">Conceptual</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2" id="MWE" value="10">MWE</a></p></td>
+						<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5" id="discrepancy" value="19">Discrepancy</a></p></td>
+					</tr>
+					<tr>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 70%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 10%"></div></div>
+						</td>
+						<td>
+							<div class="progress"><div class="determinate" style="width: 40%"></div></div>
+						</td>
+					</tr>
+				</table>
             </li>
 			<!-- <div id="preloader"><br/><h1><strong>Fetching Tags ...</strong></h1><br/></div> -->
             <!-- <li class="list-group-item"><h1>Tags</h1></li>
             <li class="list-group-item"><h1>QUestion link</h1></li> -->
-			<table>
-				
-				<tr>
-					<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1">Conceptual</a></p></td>
-					<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2">MWE</a></p></td>
-					<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5">Conceptual</a></p></td>
-				</tr>
-				<tr>
-					<td>
-						<div class="progress"><div class="determinate" style="width: 70%"></div></div>
-					</td>
-					<td>
-						<div class="progress"><div class="determinate" style="width: 10%"></div></div>
-					</td>
-					<td>
-						<div class="progress"><div class="determinate" style="width: 40%"></div></div>
-					</td>
-				</tr>
-			</table>
+			
         </ul>
 		
 	</body>
