@@ -1,6 +1,7 @@
 function sort_by_tag(tag_name){
     console.log(tag_name);
-    var list = document.getElementsByClassName("list-group");
+    var doc = document.getElementsByClassName('iframe')[0].contentDocument;
+    var list = doc.getElementsByClassName("list-group");
     switching = true;
   /* Make a loop that will continue until
   no switching has been done: */
@@ -20,8 +21,8 @@ function sort_by_tag(tag_name){
             
             let val1 = 0, val2 = 0;
             for(let i = 0; i < anchs1.length; i+=1){
-                if(anchs1[i].attributes['id'] && anchs1[i].attributes['id'].nodeValue === tag_name) val1 = anchs1[i].attributes["value"].nodeValue;
-                if(anchs2[i].attributes['id'] && anchs2[i].attributes['id'].nodeValue === tag_name) val2 = anchs2[i].attributes["value"].nodeValue;
+                if(anchs1[i].innerText === tag_name) val1 = anchs1[i].attributes["value"].nodeValue;
+                if(anchs2[i].innerText === tag_name) val2 = anchs2[i].attributes["value"].nodeValue;
             }
             
             if (val1 < val2) {

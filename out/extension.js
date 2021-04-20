@@ -16,25 +16,23 @@ const fs = require("fs");
 const path = require("path");
 const axios_1 = require("axios");
 var DomParser = require('dom-parser');
-let folderPath = "";
 var parser = new DomParser();
+//global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 const query_url = "https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
+let folderPath = "";
+let terminalData = {};
 if (vscode.workspace.workspaceFolders) {
     folderPath = vscode.workspace.workspaceFolders[0].uri
         .toString()
         .split(":")[1];
-    console.log(folderPath);
 }
-const data = "hello world";
 fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
     if (err) {
         return vscode.window.showErrorMessage("Failed to create boilerplate file!");
     }
     vscode.window.showInformationMessage("Created boilerplate files");
 });
-// Common data to be used elsewhere
-let terminalData = {};
 function activate(context) {
     let options = vscode.workspace.getConfiguration('terminalCapture');
     terminalData = {};
@@ -85,21 +83,21 @@ function runClipboardMode(context) {
             text = document.getText();
             //console.log(text);
             let errList;
-            console.log(text);
             errList = text.split('\n');
             errList = errList.filter((err) => { return err.length > 0; });
             errList.shift();
             errList.pop();
             errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
-            console.log(errList);
             const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
                 enableScripts: true
             });
             // Get path to resource on disk
-            const onDiskPath = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
+            const onDiskPathCSS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
+            const onDiskPathJS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'index.js'));
             // And get the special URI to use with the webview
-            const cssURI = panel.webview.asWebviewUri(onDiskPath);
-            panel.webview.html = yield getWebviewContent(errList, cssURI);
+            const cssURI = panel.webview.asWebviewUri(onDiskPathCSS);
+            const jsURI = panel.webview.asWebviewUri(onDiskPathJS);
+            panel.webview.html = yield getWebviewContent(errList, cssURI, jsURI);
         }));
     });
 }
@@ -110,12 +108,7 @@ function argsort(test) {
     result = result.sort(function (u, v) { return test[u] - test[v]; });
     return result.reverse();
 }
-function process(proba) {
-    const proba_vals = proba;
-    const order = argsort(proba);
-    // display(proba_vals, order);
-}
-function getWebviewContent(errList, uri) {
+function getWebviewContent(errList, cssuri, jsuri) {
     return __awaiter(this, void 0, void 0, function* () {
         let htmlResponse = `<!DOCTYPE html>
 	<html lang="en">
@@ -147,7 +140,7 @@ function getWebviewContent(errList, uri) {
         });
         let tags = [];
         let proba = [];
-        for (let i = 0; i < items.length; i += 1) {
+        for (let i = 0; i < 5; i += 1) {
             let str = "";
             response = yield axios_1.default.get(items[i].link);
             var dom = parser.parseFromString(response.data);
@@ -171,13 +164,25 @@ function getWebviewContent(errList, uri) {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		<link rel='stylesheet' href='` + uri + `' />
+		<link rel='stylesheet' href='` + cssuri + `' />
 		<title>Cat Coding</title>
 	</head>	
 	<body>
-		<h1>Results from stack overflow will be shown here</h1>`;
+		<h1>Results from stack overflow will be shown here</h1>
+		<ul class="list-group">
+			<table>
+				<tr>
+					<td><button class="post-tag custom-tag0" onclick="sort_by_tag('Conceptual')">Conceptual</button></td>
+					<td><button class="post-tag custom-tag1" onclick="sort_by_tag('MWE')">MWE</button></td>
+					<td><button class="post-tag custom-tag2" onclick="sort_by_tag('Discrepancy')">Discrepancy</button></td>
+					<td><button class="post-tag custom-tag3" onclick="sort_by_tag('Error')">Error</button></td>
+					<td><button class="post-tag custom-tag4" onclick="sort_by_tag('Implementation')">Implementation</button></td>
+					<td><button class="post-tag custom-tag5" onclick="sort_by_tag('Learning')">Learning</button></td>			
+				</tr>
+			</table>
+		</ul>`;
         var list = `<ul class="list-group">`;
-        for (let i = 0; i < items.length; i += 1) {
+        for (let i = 0; i < 5; i += 1) {
             var listItem = `<li class="list-group-item">
 		<p><a href=${items[i].link}>${items[i].title}</a></p>
 		<p><ul>
@@ -188,9 +193,9 @@ function getWebviewContent(errList, uri) {
             listItem += `<table>
 			
 		<tr>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1">${tagName[tags[i][0]]}</a></p></td>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2">${tagName[tags[i][1]]}</a></p></td>
-			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5">${tagName[tags[i][2]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag1 id="${tagName[tags[i][0]]}" value="${proba[i][tags[i][0]]}"">${tagName[tags[i][0]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag2 id="${tagName[tags[i][1]]}" value="${proba[i][tags[i][1]]}"">${tagName[tags[i][1]]}</a></p></td>
+			<td><p style="font-size: 14px;" ><a class="post-tag inactiveLink custom-tag5 id="${tagName[tags[i][2]]}" value="${proba[i][tags[i][2]]}"">${tagName[tags[i][2]]}</a></p></td>
 		</tr>
 		<tr>
 			<td>
@@ -207,10 +212,51 @@ function getWebviewContent(errList, uri) {
             listItem += "</ul></p>";
             list += listItem;
         }
-        list += `<ul>`;
-        var post = `</body></html>`;
+        list += `</ul>`;
+        var post = `<script>
+	function sort_by_tag(tag_name){
+		console.log(tag_name);
+		var list = document.getElementsByClassName("list-group");
+		switching = true;
+	  /* Make a loop that will continue until
+	  no switching has been done: */
+	  while (switching) {
+			// Start by saying: no switching is done:
+			switching = false;
+			b = list[1].getElementsByClassName("list-group-item");
+			//console.log(b[0].children[5].getElementsbyTagName('a'));
+			// Loop through all list items:
+			for (i = 0; i < (b.length - 1); i++) {
+			// Start by saying there should be no switching:
+				shouldSwitch = false;
+				/* Check if the next item should
+				switch place with the current item: */
+				let anchs1 = b[i].querySelectorAll('a');
+				let anchs2 = b[i+1].querySelectorAll('a');
+				
+				let val1 = 0, val2 = 0;
+				for(let i = 0; i < anchs1.length; i+=1){
+					if(anchs1[i].innerText === tag_name) val1 = anchs1[i].attributes["value"].nodeValue;
+					if(anchs2[i].innerText === tag_name) val2 = anchs2[i].attributes["value"].nodeValue;
+				}
+				
+				if (val1 < val2) {
+					/* If next item is alphabetically lower than current item,
+					mark as a switch and break the loop: */
+					shouldSwitch = true;
+					break;
+				}
+			}
+			if (shouldSwitch) {
+				/* If a switch has been marked, make the switch
+				and mark the switch as done: */
+				b[i].parentNode.insertBefore(b[i + 1], b[i]);
+				switching = true;
+			}
+		}
+	}
+	</script></body></html>`;
         var doc = pre + list + post;
-        console.log(items);
         return doc;
     });
 }
@@ -223,40 +269,14 @@ function cleancache() {
     });
     vscode.commands.executeCommand('workbench.action.files.saveAll');
 }
-function deleteFile(filePath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            fs.unlink(filePath, () => {
-                console.log(`Deleted ${filePath}`);
-            });
-        }
-        catch (error) {
-            console.error(`Got an error trying to delete the file: ${error.message}`);
-        }
-    });
-}
 function registerTerminalForCapture(terminal) {
     terminal.processId.then(terminalId => {
         if (terminalId !== undefined) {
             terminalData[terminalId] = "";
             terminal.onDidWriteData((data) => {
-                // TODO:
-                //   - Need to remove (or handle) backspace
-                //   - not sure what to do about carriage return???
-                //   - might have some odd output
                 terminalData[terminalId] += data;
             });
         }
     });
 }
-// const editor = vscode.window.activeTextEditor;
-// 						if(editor!==undefined){
-// 							var selection = editor.selection; 
-// 							var text = editor.document.getText(selection);
-// 							console.log(editor.document.getText());
-// 						}
-// 						vscode.workspace.openTextDocument('/home/kirtikjangale/Desktop/Project/sonsole/output.txt').then((document) => {
-// 							let text = document.getText();
-// 							console.log(text);
-// 						});
 //# sourceMappingURL=extension.js.map
