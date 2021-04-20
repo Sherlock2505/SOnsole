@@ -17,6 +17,9 @@ const path = require("path");
 const axios_1 = require("axios");
 var DomParser = require('dom-parser');
 var parser = new DomParser();
+const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
+    enableScripts: true
+});
 //global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 const query_url = "https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
@@ -72,10 +75,10 @@ function runClipboardMode(context) {
     return __awaiter(this, void 0, void 0, function* () {
         yield vscode.commands.executeCommand('workbench.action.terminal.selectAll');
         yield vscode.commands.executeCommand('workbench.action.terminal.copySelection');
-        yield vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
         let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
         yield vscode.commands.executeCommand('vscode.open', url);
         yield vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+        yield vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
         yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         yield vscode.commands.executeCommand('workbench.action.terminal.clear');
         let text = "";
@@ -88,9 +91,7 @@ function runClipboardMode(context) {
             errList.shift();
             errList.pop();
             errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
-            const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
-                enableScripts: true
-            });
+            console.log(errList);
             // Get path to resource on disk
             const onDiskPathCSS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
             const onDiskPathJS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'index.js'));
@@ -132,15 +133,19 @@ function getWebviewContent(errList, cssuri, jsuri) {
 	</body>
 	</html>`;
         let response;
-        response = yield axios_1.default.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
+        let body = processError(errList[errList.length - 1]);
+        const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
+        response = yield axios_1.default.get(URI);
         let items = response.data.items;
         items = items.filter((item) => {
-            console.log(item.is_answered);
+            //console.log(item.is_answered);
             return item.is_answered === true;
         });
+        console.log(`${response}`);
+        //'error: 'x' was not declared in this scope'
         let tags = [];
         let proba = [];
-        for (let i = 0; i < 5; i += 1) {
+        for (let i = 0; i < Math.min(5, items.length); i += 1) {
             let str = "";
             response = yield axios_1.default.get(items[i].link);
             var dom = parser.parseFromString(response.data);
@@ -182,7 +187,7 @@ function getWebviewContent(errList, cssuri, jsuri) {
 			</table>
 		</ul>`;
         var list = `<ul class="list-group">`;
-        for (let i = 0; i < 5; i += 1) {
+        for (let i = 0; i < Math.min(5, items.length); i += 1) {
             var listItem = `<li class="list-group-item">
 		<p><a href=${items[i].link}>${items[i].title}</a></p>
 		<p><ul>
@@ -278,5 +283,13 @@ function registerTerminalForCapture(terminal) {
             });
         }
     });
+}
+function processError(err) {
+    if (err.split(' ')[0] !== "TypeError:") {
+        return 'error:' + err.split('error: ').slice(1)[0];
+    }
+    else {
+        return err;
+    }
 }
 //# sourceMappingURL=extension.js.map
