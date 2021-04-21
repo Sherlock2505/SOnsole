@@ -90,7 +90,7 @@ function runClipboardMode(context) {
             errList = errList.filter((err) => { return err.length > 0; });
             errList.shift();
             errList.pop();
-            errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
+            errList = errList.filter((err) => { return err.toLowerCase().includes("error:"); });
             console.log(errList);
             // Get path to resource on disk
             const onDiskPathCSS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
@@ -134,6 +134,7 @@ function getWebviewContent(errList, cssuri, jsuri) {
 	</html>`;
         let response;
         let body = processError(errList[errList.length - 1]);
+        console.log(body);
         const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
         response = yield axios_1.default.get(URI);
         let items = response.data.items;
@@ -285,8 +286,11 @@ function registerTerminalForCapture(terminal) {
     });
 }
 function processError(err) {
-    if (err.split(' ')[0] !== "TypeError:") {
-        return 'error:' + err.split('error: ').slice(1)[0];
+    if (err.split(' ')[0].toLocaleLowerCase().includes('cpp')) {
+        return 'error: ' + err.split('error: ').slice(1)[0];
+    }
+    if (err.split(' ')[0].toLocaleLowerCase().includes('java')) {
+        return 'java error: ' + err.split('error: ').slice(1)[0];
     }
     else {
         return err;

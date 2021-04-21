@@ -93,7 +93,7 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 		errList = errList.filter((err) => { return err.length > 0; });
 		errList.shift();
 		errList.pop();
-		errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
+		errList = errList.filter((err) => { return err.toLowerCase().includes("error:"); });
 		console.log(errList);
 		
 
@@ -147,6 +147,7 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 	let response: any;
 	
 	let body = processError(errList[errList.length-1]);
+	console.log(body);
 	const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
 	response = await axios.get(URI);
 	
@@ -315,9 +316,12 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 
 
 function processError(err: string){
-	if(err.split(' ')[0]!=="TypeError:"){
-	  return 'error:' + err.split('error: ').slice(1)[0];
-  	}
+	if(err.split(' ')[0].toLocaleLowerCase().includes('cpp')){
+		return 'error: ' + err.split('error: ').slice(1)[0];
+	}
+	if(err.split(' ')[0].toLocaleLowerCase().includes('java')){
+		return 'java error: ' + err.split('error: ').slice(1)[0];
+	}
 	else{
 		return err;
 	}
