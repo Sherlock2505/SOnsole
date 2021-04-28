@@ -8,11 +8,11 @@ Describe specific features of your extension including screenshots of your exten
 
 For example if there is an image subfolder under your extension project workspace:
 
-\!\[Answers displaying in webview using terminal capture command.\]\(images/out.gif\)
-\!\[Sorting the answers using the tags feature.\]\(images/out1.gif\)
+![Answers displaying in webview using terminal capture command.](/images/out.gif)
+
+![Sorting the answers using the tags feature.](/images/out1.gif)
 
 ## Explanation of code and its flow 
-
 
 
 ## Explanation of working
