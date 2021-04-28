@@ -1,25 +1,32 @@
+/* All the dependencies used in the project */
+
 import * as vscode from 'vscode';
-// const fs = require("fs");
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+
+
+//global variables to be used
+
 var DomParser = require('dom-parser');
 var parser = new DomParser();
 const panel =  vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
 	enableScripts: true
 });
-
-//global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 const query_url="https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
 let folderPath = "";
 let terminalData = {};
+
+/* getting the workspace folder path in which the files are to be run */
 
 if (vscode.workspace.workspaceFolders) {
 	folderPath = vscode.workspace.workspaceFolders[0].uri
 		.toString()
 		.split(":")[1];
 }
+
+/* initially creating the boilerplate files for storing the terminal output */
 
 fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 	if (err) {
@@ -30,16 +37,20 @@ fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 	vscode.window.showInformationMessage("Created boilerplate files");
 });
 
+/* The below function activates after pressing the command from command pallette */
+
 export function activate(context: vscode.ExtensionContext) {
 
 	let options = vscode.workspace.getConfiguration('terminalCapture');
 	terminalData = {};
 
+	/* Checking whether terminal capture is enabled or not */
 	if (options.get('enable') === false) {
 		console.log('Terminal Capture is disabled');
 		return;
 	}
 
+	/* prints active message when extension is activated */
 	console.log('sonsole extension is now active');
 
 	if (options.get('useClipboard') === false) {
@@ -52,6 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	}
 
+	/* registering the command named terminial capture to get the results on web view */
 	context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', async () => {
 		if (options.get('enable') === false) {
 			console.log('Command has been disabled, not running');
@@ -63,18 +75,21 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-
 		await runClipboardMode(context);
 		await cleancache();
 	}));
 }
 
+/* deactivate function runs when the active vscode window is closed */
 export function deactivate() {
 	console.log(terminalData);
 	terminalData = {};
 }
 
+/* The below function captures the terminal output and processes it and send to next function for rendering results */
 async function runClipboardMode(context:vscode.ExtensionContext) {
+
+	/* the following list of commands caopy the oputput from terminal to clipboard and paste it to output.txt and save it */
 	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
 	await vscode.commands.executeCommand('workbench.action.terminal.copySelection');
 	let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
@@ -84,19 +99,17 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
+	/* Opens the output logs and processes it to get the error list */
 	let text="";
 	vscode.workspace.openTextDocument(folderPath + "/output.txt").then(async (document) => {
 		text = document.getText();
-		//console.log(text);
 		let errList:string[];		
 		errList = text.split('\n');
 		errList = errList.filter((err) => { return err.length > 0; });
 		errList.shift();
 		errList.pop();
 		errList = errList.filter((err) => { return err.toLowerCase().includes("error:"); });
-		console.log(errList);
 		
-
 		// Get path to resource on disk
 		const onDiskPathCSS = vscode.Uri.file( 
 			path.join(context.extensionPath, 'src', 'styles.css')
@@ -104,13 +117,17 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 		const onDiskPathJS = vscode.Uri.file( 
 			path.join(context.extensionPath, 'src', 'index.js')
 		);
+
 		// And get the special URI to use with the webview
 		const cssURI = panel.webview.asWebviewUri(onDiskPathCSS);
 		const jsURI = panel.webview.asWebviewUri(onDiskPathJS);
-		panel.webview.html = await getWebviewContent(errList,cssURI, jsURI);
+
+		/* panel generates webview from the error list fetched */
+		panel.webview.html = await getWebviewContent(errList, cssURI, jsURI);
 	});
 }
 
+/* sorting the results based on the probabilities for tags generated */
 function argsort(test: any) {
 	let result = [];
 	for(let i = 0; i !== test.length; ++i) result[i] = i;
@@ -118,9 +135,10 @@ function argsort(test: any) {
 	return result.reverse();
 }
 
+/* Generation of webview from error list */
 async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 
-
+	/* default response when server gives timeout */
 	let htmlResponse = `<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -143,41 +161,36 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 	</body>
 	</html>`;
 
-
-	let response: any;
 	
+	let response: any;
 	let body = processError(errList[errList.length-1]);
-	console.log(body);
+	
+	/* requesting the api stack exchange for relevant results for the error */
 	const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
 	response = await axios.get(URI);
 	
+	/* The response results are filtered if they are answered and loaded in items list */
 	let items = response.data.items;
-	items = items.filter((item:any) => {
-	//console.log(item.is_answered);
-	return item.is_answered===true;});
-
-	console.log(`${response}`);
-	//'error: 'x' was not declared in this scope'
+	items = items.filter((item:any) => { return item.is_answered===true; });
 
 	let tags = [];
 	let proba = [];
+	
+	/* getting the response and generating the tags for questions based on the context */
+
 	for(let i=0;i<Math.min(5,items.length);i+=1){
-		let str="";
-		
+
+		let query_str="";
 		response = await axios.get(items[i].link);
-		
 		var dom = parser.parseFromString(response.data);
-
-    	//console.log(dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p"));
-
 		let tp = dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p");
 		
 		for(let j=0;j<tp.length;j+=1){
-			str+=tp[j].textContent;
-			str+=" ";
+			query_str+=tp[j].textContent;
+			query_str+=" ";
 		}
-		console.log(str);
-		let tag = await axios.get(query_url+encodeURIComponent(str).substr(0,4000));
+
+		let tag = await axios.get(query_url+encodeURIComponent(query_str).substr(0,4000));
 		console.log(tag);
 
 		let sortedTag = argsort(tag.data);
@@ -185,6 +198,7 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 		proba.push(tag.data);
 	}
 
+	/* developing HTML response view for tagged responses in the list view form */
 
 	var pre = `<!DOCTYPE html>
 	<html lang="en">
@@ -194,7 +208,7 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 		<link rel='stylesheet' href='`+ cssuri + `' />
-		<title>Cat Coding</title>
+		<title>SOnsole</title>
 	</head>	
 	<body>
 		<h1>Results from stack overflow will be shown here</h1>
@@ -210,6 +224,8 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 				</tr>
 			</table>
 		</ul>`;
+
+	
 	var list = `<ul class="list-group">`;
 	for(let i = 0; i <Math.min(5,items.length); i+=1){
 		var listItem = `<li class="list-group-item">
@@ -242,24 +258,16 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 		list += listItem;
 	}
 	list += `</ul>`;
+
 	var post = `<script>
 	function sort_by_tag(tag_name){
-		console.log(tag_name);
 		var list = document.getElementsByClassName("list-group");
 		switching = true;
-	  /* Make a loop that will continue until
-	  no switching has been done: */
-	  while (switching) {
-			// Start by saying: no switching is done:
+		while (switching) {
 			switching = false;
 			b = list[1].getElementsByClassName("list-group-item");
-			//console.log(b[0].children[5].getElementsbyTagName('a'));
-			// Loop through all list items:
 			for (i = 0; i < (b.length - 1); i++) {
-			// Start by saying there should be no switching:
 				shouldSwitch = false;
-				/* Check if the next item should
-				switch place with the current item: */
 				let anchs1 = b[i].querySelectorAll('a');
 				let anchs2 = b[i+1].querySelectorAll('a');
 				
@@ -270,25 +278,23 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 				}
 				
 				if (val1 < val2) {
-					/* If next item is alphabetically lower than current item,
-					mark as a switch and break the loop: */
 					shouldSwitch = true;
 					break;
 				}
 			}
 			if (shouldSwitch) {
-				/* If a switch has been marked, make the switch
-				and mark the switch as done: */
 				b[i].parentNode.insertBefore(b[i + 1], b[i]);
 				switching = true;
 			}
 		}
 	}
 	</script></body></html>`;
+
 	var doc = pre + list + post;
 	return doc;
 }
 
+/* deletes contents of the ouput logs stored in output.txt */
 function cleancache() {
 	fs.writeFile(path.join( < string > folderPath, "output.txt"), "", err => {
 		if (err) {
@@ -301,6 +307,7 @@ function cleancache() {
 	vscode.commands.executeCommand('workbench.action.files.saveAll');
 }
 
+/* registers the active terminal for capture */
 function registerTerminalForCapture(terminal: vscode.Terminal) {
 	terminal.processId.then(terminalId => {
 
@@ -314,7 +321,7 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 	});
 }
 
-
+/* processes the error based on languages the error is in */
 function processError(err: string){
 	if(err.split(' ')[0].toLocaleLowerCase().includes('cpp')){
 		return 'error: ' + err.split('error: ').slice(1)[0];
