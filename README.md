@@ -4,11 +4,11 @@ This extension is useful for getting solutions to error messages on the go while
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
+> Using the terminal capture command we can see the results from stackoverflow with the tags.
 
 ![Answers displaying in webview using terminal capture command.](/images/out.gif)
+
+> The results can be sorted on the basis of tags as shown below.
 
 ![Sorting the answers using the tags feature.](/images/out1.gif)
 
