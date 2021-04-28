@@ -1,4 +1,4 @@
-# sonsole README
+# SOnsole README
 
 This extension is useful for getting solutions to error messages on the go while writing the code. Hence this is helpful for novice programmers. The Sonsole extension not only gives stackoverflow answered queries but also provides context based tags so that the semantic search is available and thus manual search time for answers reduces. 
 
@@ -14,8 +14,19 @@ This extension is useful for getting solutions to error messages on the go while
 
 ## Explanation of code and its flow 
 
+* The code is divided into few functions for better code quality with the most optimal functionality
+* The various functions involved are as follows:-
+* * activate
+* * deactivate
+* * getWebViewContent
+* * argsort
+* * runClipboardMode
+* * cleanCache
+* * registerTerminalForCapture
+* * processError
 
 ## Explanation of working
+
 
 
 ## Extension Settings
@@ -32,11 +43,9 @@ This extension contributes the following settings:
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of SonSole
+Initial release of SOnsole
 
 ### 1.0.1
 
@@ -45,5 +54,8 @@ SOtagger used for tagging relevant results.
 ### 1.1.0
 
 Sorting feature based on tags added.
+
+## Contributions
+
 
 
