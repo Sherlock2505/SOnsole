@@ -5,6 +5,9 @@ import * as path from 'path';
 import axios from 'axios';
 var DomParser = require('dom-parser');
 var parser = new DomParser();
+const panel =  vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
+	enableScripts: true
+});
 
 //global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
@@ -74,10 +77,10 @@ export function deactivate() {
 async function runClipboardMode(context:vscode.ExtensionContext) {
 	await vscode.commands.executeCommand('workbench.action.terminal.selectAll');
 	await vscode.commands.executeCommand('workbench.action.terminal.copySelection');
-	await vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
 	let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
 	await vscode.commands.executeCommand('vscode.open', url);
 	await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+	await vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
 	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	await vscode.commands.executeCommand('workbench.action.terminal.clear');
 
@@ -90,11 +93,9 @@ async function runClipboardMode(context:vscode.ExtensionContext) {
 		errList = errList.filter((err) => { return err.length > 0; });
 		errList.shift();
 		errList.pop();
-		errList = errList.filter((err) => { return err.toLowerCase().includes("error"); });
-
-		const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
-			enableScripts: true
-		});
+		errList = errList.filter((err) => { return err.toLowerCase().includes("error:"); });
+		console.log(errList);
+		
 
 		// Get path to resource on disk
 		const onDiskPathCSS = vscode.Uri.file( 
@@ -144,16 +145,25 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 
 
 	let response: any;
-	response = await axios.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=activity&body=${errList[0]}&site=stackoverflow`);
+	
+	let body = processError(errList[errList.length-1]);
+	console.log(body);
+	const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
+	response = await axios.get(URI);
+	
 	let items = response.data.items;
 	items = items.filter((item:any) => {
-	console.log(item.is_answered);
+	//console.log(item.is_answered);
 	return item.is_answered===true;});
+
+	console.log(`${response}`);
+	//'error: 'x' was not declared in this scope'
 
 	let tags = [];
 	let proba = [];
-	for(let i=0;i<5;i+=1){
+	for(let i=0;i<Math.min(5,items.length);i+=1){
 		let str="";
+		
 		response = await axios.get(items[i].link);
 		
 		var dom = parser.parseFromString(response.data);
@@ -201,7 +211,7 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 			</table>
 		</ul>`;
 	var list = `<ul class="list-group">`;
-	for(let i = 0; i < 5; i+=1){
+	for(let i = 0; i <Math.min(5,items.length); i+=1){
 		var listItem = `<li class="list-group-item">
 		<p><a href=${items[i].link}>${items[i].title}</a></p>
 		<p><ul>
@@ -302,4 +312,17 @@ function registerTerminalForCapture(terminal: vscode.Terminal) {
 			});
 		}
 	});
+}
+
+
+function processError(err: string){
+	if(err.split(' ')[0].toLocaleLowerCase().includes('cpp')){
+		return 'error: ' + err.split('error: ').slice(1)[0];
+	}
+	if(err.split(' ')[0].toLocaleLowerCase().includes('java')){
+		return 'java error: ' + err.split('error: ').slice(1)[0];
+	}
+	else{
+		return err;
+	}
 }
