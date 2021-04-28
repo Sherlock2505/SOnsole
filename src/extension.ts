@@ -163,7 +163,12 @@ async function getWebviewContent(errList:string[],cssuri:any, jsuri: any) {
 
 	
 	let response: any;
-	let body = processError(errList[errList.length-1]);
+	let body: any;
+	if(errList.length>=1){
+		body = processError(errList[errList.length-1]);
+	}else{
+		body = "";
+	} 
 	
 	/* requesting the api stack exchange for relevant results for the error */
 	const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);

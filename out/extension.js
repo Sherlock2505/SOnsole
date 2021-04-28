@@ -1,4 +1,5 @@
 "use strict";
+/* All the dependencies used in the project */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -11,38 +12,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
-// const fs = require("fs");
 const fs = require("fs");
 const path = require("path");
 const axios_1 = require("axios");
+//global variables to be used
 var DomParser = require('dom-parser');
 var parser = new DomParser();
 const panel = vscode.window.createWebviewPanel('sonsoleView', 'Answers', vscode.ViewColumn.Two, {
     enableScripts: true
 });
-//global variables to be used
 const tagName = ["Discrepancy", "Error", "Implementation", "Learning", "Conceptual", "MWE"];
 const query_url = "https://sleepy-taiga-14192.herokuapp.com/db/?Body=";
 let folderPath = "";
 let terminalData = {};
+/* getting the workspace folder path in which the files are to be run */
 if (vscode.workspace.workspaceFolders) {
     folderPath = vscode.workspace.workspaceFolders[0].uri
         .toString()
         .split(":")[1];
 }
+/* initially creating the boilerplate files for storing the terminal output */
 fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
     if (err) {
         return vscode.window.showErrorMessage("Failed to create boilerplate file!");
     }
     vscode.window.showInformationMessage("Created boilerplate files");
 });
+/* The below function activates after pressing the command from command pallette */
 function activate(context) {
     let options = vscode.workspace.getConfiguration('terminalCapture');
     terminalData = {};
+    /* Checking whether terminal capture is enabled or not */
     if (options.get('enable') === false) {
         console.log('Terminal Capture is disabled');
         return;
     }
+    /* prints active message when extension is activated */
     console.log('sonsole extension is now active');
     if (options.get('useClipboard') === false) {
         vscode.window.terminals.forEach(t => {
@@ -52,6 +57,7 @@ function activate(context) {
             registerTerminalForCapture(t);
         });
     }
+    /* registering the command named terminial capture to get the results on web view */
     context.subscriptions.push(vscode.commands.registerCommand('extension.sonsole.runCapture', () => __awaiter(this, void 0, void 0, function* () {
         if (options.get('enable') === false) {
             console.log('Command has been disabled, not running');
@@ -66,13 +72,16 @@ function activate(context) {
     })));
 }
 exports.activate = activate;
+/* deactivate function runs when the active vscode window is closed */
 function deactivate() {
     console.log(terminalData);
     terminalData = {};
 }
 exports.deactivate = deactivate;
+/* The below function captures the terminal output and processes it and send to next function for rendering results */
 function runClipboardMode(context) {
     return __awaiter(this, void 0, void 0, function* () {
+        /* the following list of commands caopy the oputput from terminal to clipboard and paste it to output.txt and save it */
         yield vscode.commands.executeCommand('workbench.action.terminal.selectAll');
         yield vscode.commands.executeCommand('workbench.action.terminal.copySelection');
         let url = vscode.Uri.parse('file:' + folderPath + "/output.txt");
@@ -81,27 +90,28 @@ function runClipboardMode(context) {
         yield vscode.commands.executeCommand('workbench.action.terminal.clearSelection');
         yield vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         yield vscode.commands.executeCommand('workbench.action.terminal.clear');
+        /* Opens the output logs and processes it to get the error list */
         let text = "";
         vscode.workspace.openTextDocument(folderPath + "/output.txt").then((document) => __awaiter(this, void 0, void 0, function* () {
             text = document.getText();
-            //console.log(text);
             let errList;
             errList = text.split('\n');
             errList = errList.filter((err) => { return err.length > 0; });
             errList.shift();
             errList.pop();
             errList = errList.filter((err) => { return err.toLowerCase().includes("error:"); });
-            console.log(errList);
             // Get path to resource on disk
             const onDiskPathCSS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'styles.css'));
             const onDiskPathJS = vscode.Uri.file(path.join(context.extensionPath, 'src', 'index.js'));
             // And get the special URI to use with the webview
             const cssURI = panel.webview.asWebviewUri(onDiskPathCSS);
             const jsURI = panel.webview.asWebviewUri(onDiskPathJS);
+            /* panel generates webview from the error list fetched */
             panel.webview.html = yield getWebviewContent(errList, cssURI, jsURI);
         }));
     });
 }
+/* sorting the results based on the probabilities for tags generated */
 function argsort(test) {
     let result = [];
     for (let i = 0; i !== test.length; ++i)
@@ -109,8 +119,10 @@ function argsort(test) {
     result = result.sort(function (u, v) { return test[u] - test[v]; });
     return result.reverse();
 }
+/* Generation of webview from error list */
 function getWebviewContent(errList, cssuri, jsuri) {
     return __awaiter(this, void 0, void 0, function* () {
+        /* default response when server gives timeout */
         let htmlResponse = `<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -133,36 +145,38 @@ function getWebviewContent(errList, cssuri, jsuri) {
 	</body>
 	</html>`;
         let response;
-        let body = processError(errList[errList.length - 1]);
-        console.log(body);
+        let body;
+        if (errList.length >= 1) {
+            body = processError(errList[errList.length - 1]);
+        }
+        else {
+            body = "";
+        }
+        /* requesting the api stack exchange for relevant results for the error */
         const URI = encodeURI(`https://api.stackexchange.com//2.2/search/advanced?order=desc&sort=activity&body=${body}&site=stackoverflow`);
         response = yield axios_1.default.get(URI);
+        /* The response results are filtered if they are answered and loaded in items list */
         let items = response.data.items;
-        items = items.filter((item) => {
-            //console.log(item.is_answered);
-            return item.is_answered === true;
-        });
-        console.log(`${response}`);
-        //'error: 'x' was not declared in this scope'
+        items = items.filter((item) => { return item.is_answered === true; });
         let tags = [];
         let proba = [];
+        /* getting the response and generating the tags for questions based on the context */
         for (let i = 0; i < Math.min(5, items.length); i += 1) {
-            let str = "";
+            let query_str = "";
             response = yield axios_1.default.get(items[i].link);
             var dom = parser.parseFromString(response.data);
-            //console.log(dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p"));
             let tp = dom.getElementsByClassName("s-prose js-post-body")[0].getElementsByTagName("p");
             for (let j = 0; j < tp.length; j += 1) {
-                str += tp[j].textContent;
-                str += " ";
+                query_str += tp[j].textContent;
+                query_str += " ";
             }
-            console.log(str);
-            let tag = yield axios_1.default.get(query_url + encodeURIComponent(str).substr(0, 4000));
+            let tag = yield axios_1.default.get(query_url + encodeURIComponent(query_str).substr(0, 4000));
             console.log(tag);
             let sortedTag = argsort(tag.data);
             tags.push(sortedTag);
             proba.push(tag.data);
         }
+        /* developing HTML response view for tagged responses in the list view form */
         var pre = `<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -171,7 +185,7 @@ function getWebviewContent(errList, cssuri, jsuri) {
 		
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 		<link rel='stylesheet' href='` + cssuri + `' />
-		<title>Cat Coding</title>
+		<title>SOnsole</title>
 	</head>	
 	<body>
 		<h1>Results from stack overflow will be shown here</h1>
@@ -221,22 +235,13 @@ function getWebviewContent(errList, cssuri, jsuri) {
         list += `</ul>`;
         var post = `<script>
 	function sort_by_tag(tag_name){
-		console.log(tag_name);
 		var list = document.getElementsByClassName("list-group");
 		switching = true;
-	  /* Make a loop that will continue until
-	  no switching has been done: */
-	  while (switching) {
-			// Start by saying: no switching is done:
+		while (switching) {
 			switching = false;
 			b = list[1].getElementsByClassName("list-group-item");
-			//console.log(b[0].children[5].getElementsbyTagName('a'));
-			// Loop through all list items:
 			for (i = 0; i < (b.length - 1); i++) {
-			// Start by saying there should be no switching:
 				shouldSwitch = false;
-				/* Check if the next item should
-				switch place with the current item: */
 				let anchs1 = b[i].querySelectorAll('a');
 				let anchs2 = b[i+1].querySelectorAll('a');
 				
@@ -247,15 +252,11 @@ function getWebviewContent(errList, cssuri, jsuri) {
 				}
 				
 				if (val1 < val2) {
-					/* If next item is alphabetically lower than current item,
-					mark as a switch and break the loop: */
 					shouldSwitch = true;
 					break;
 				}
 			}
 			if (shouldSwitch) {
-				/* If a switch has been marked, make the switch
-				and mark the switch as done: */
 				b[i].parentNode.insertBefore(b[i + 1], b[i]);
 				switching = true;
 			}
@@ -266,6 +267,7 @@ function getWebviewContent(errList, cssuri, jsuri) {
         return doc;
     });
 }
+/* deletes contents of the ouput logs stored in output.txt */
 function cleancache() {
     fs.writeFile(path.join(folderPath, "output.txt"), "", err => {
         if (err) {
@@ -275,6 +277,7 @@ function cleancache() {
     });
     vscode.commands.executeCommand('workbench.action.files.saveAll');
 }
+/* registers the active terminal for capture */
 function registerTerminalForCapture(terminal) {
     terminal.processId.then(terminalId => {
         if (terminalId !== undefined) {
@@ -285,6 +288,7 @@ function registerTerminalForCapture(terminal) {
         }
     });
 }
+/* processes the error based on languages the error is in */
 function processError(err) {
     if (err.split(' ')[0].toLocaleLowerCase().includes('cpp')) {
         return 'error: ' + err.split('error: ').slice(1)[0];
