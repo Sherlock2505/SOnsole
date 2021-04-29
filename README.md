@@ -16,18 +16,20 @@ This extension is useful for getting solutions to error messages on the go while
 
 * The code is divided into few functions for better code quality with the most optimal functionality
 * The various functions involved are as follows:-
-* * activate
-* * deactivate
+* * activate - Activates the extension and pushes the commands in the context of vscode window.
+* * deactivate - Cleanup function after we close window and extension gets unactivated.
+* * runClipboardMode - The clipboard mode function captures the output of terminal and processes it to generate error list. 
+* * processError - The error query is processed for various languages. Currently Java, Cpp, and Python are only supported ones.
 * * getWebViewContent
-* * argsort
-* * runClipboardMode
-* * cleanCache
-* * registerTerminalForCapture
-* * processError
+    * The firts part involves fetching answers for query using stackexchange api.
+    * The second part tagging posts from filtered Stack Overflow posts.
+* * argsort - helps to sort posts based on tags probabilities.
+* * cleanCache - Cleans the content of output.txt file.
+* * registerTerminalForCapture - registers terminal for capture.
 
 ## Explanation of working
 
-
+![Diagram for explaining the architecture of project](/images/diagram.png)
 
 ## Extension Settings
 
@@ -55,7 +57,8 @@ SOtagger used for tagging relevant results.
 
 Sorting feature based on tags added.
 
-## Contributions
+## Contributors
 
-
+[DEEP MAHESHWARI](https://github.com/Sherlock2505)      
+[KIRTIK JANGALE](https://github.com/kirtikjangale)
 
